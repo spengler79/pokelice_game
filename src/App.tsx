@@ -45,6 +45,10 @@ export default function App() {
   const [battleFlash, setBattleFlash] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [profileDraft, setProfileDraft] = useState<UserProfile>({ name: '', avatar: 'https://picsum.photos/seed/trainer1/200/200' });
+  const [tournamentStage, setTournamentStage] = useState(0);
+  const [opponentName, setOpponentName] = useState('');
+  const [hasVoted, setHasVoted] = useState(false);
+  const [opponentVoted, setOpponentVoted] = useState(false);
 
   useEffect(() => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -53,6 +57,24 @@ export default function App() {
     ws.onmessage = (event) => {
       const msg = JSON.parse(event.data);
       switch (msg.type) {
+        case "TOURNAMENT_START":
+          setOpponentName(msg.opponentName);
+          setTournamentStage(msg.stage);
+          setIsSearching(false);
+          startTournamentBattle(msg.stage);
+          break;
+        case "NEXT_STAGE":
+          setTournamentStage(msg.stage);
+          setHasVoted(false);
+          setOpponentVoted(false);
+          startTournamentBattle(msg.stage);
+          break;
+        case "VOTE_RECEIVED":
+          setHasVoted(true);
+          break;
+        case "OPPONENT_VOTED":
+          setOpponentVoted(true);
+          break;
         case "MATCH_FOUND":
           setEnemy(msg.opponent);
           setOnlineBattleId(msg.battleId);
@@ -60,6 +82,8 @@ export default function App() {
           setPhase('ONLINE_BATTLE');
           setIsSearching(false);
           setBattleLog(['Online match found!']);
+          setHasVoted(false);
+          setOpponentVoted(false);
           break;
         case "OPPONENT_ACTION":
           if (msg.action === "ATTACK") {
@@ -268,6 +292,25 @@ export default function App() {
     setIsPlayerTurn(true);
   };
 
+  const startTournamentBattle = (stage: number) => {
+    const randomEnemyBase = WILD_POKEMON[Math.floor(Math.random() * WILD_POKEMON.length)];
+    const enemyLevel = Math.max(1, (pokemon?.level || 5) + stage);
+    const multiplier = 1 + (enemyLevel * 0.12); // Slightly harder for tournament
+    
+    setEnemy({
+      ...randomEnemyBase,
+      level: enemyLevel,
+      hp: Math.floor(randomEnemyBase.hp * multiplier),
+      maxHp: Math.floor(randomEnemyBase.hp * multiplier),
+      attack: Math.floor(randomEnemyBase.attack * multiplier),
+      defense: Math.floor(randomEnemyBase.defense * multiplier),
+      isTournamentNPC: true
+    });
+    setBattleLog([`Tournament Stage ${stage}: A wild ${randomEnemyBase.name} appeared!`]);
+    setPhase('TOURNAMENT');
+    setIsPlayerTurn(true);
+  };
+
   const handleAttack = (move: Move) => {
     if (!pokemon || !enemy || !isPlayerTurn) return;
 
@@ -404,6 +447,8 @@ export default function App() {
   const handleWin = () => {
     const xpGained = 60 + (enemy.level * 15); // Increased XP for easier leveling
     const isBossWin = enemy.isBoss;
+    const isTournamentWin = enemy.isTournamentNPC;
+    
     setBattleLog(prev => [...prev, `${enemy.name} fainted! Gained ${xpGained} XP.`]);
     if (isBossWin) {
       setBattleLog(prev => [...prev, "CONGRATULATIONS! YOU DEFEATED THE FINAL BOSS!"]);
@@ -416,7 +461,7 @@ export default function App() {
         
         let newXp = p.experience + xpGained;
         let newLevel = p.level;
-        let newTrainingPoints = p.trainingPoints + (isBossWin ? 10 : 0);
+        let newTrainingPoints = p.trainingPoints + (isBossWin ? 10 : 0) + (isTournamentWin ? 2 : 0);
         let newWins = p.wins + 1;
         let newTotalWins = p.totalWins + 1;
         let stats = { ...p.currentStats, hp: p.currentStats.maxHp };
@@ -451,7 +496,11 @@ export default function App() {
         return newParty;
       });
       
-      setPhase('HUB');
+      if (isTournamentWin) {
+        setPhase('TOURNAMENT_VOTE');
+      } else {
+        setPhase('HUB');
+      }
       setEnemy(null);
     }, 2000);
   };
@@ -959,7 +1008,62 @@ export default function App() {
                   </div>
                 </div>
               </motion.div>
-            ) : phase === 'BATTLE' || phase === 'ONLINE_BATTLE' ? (
+            ) : phase === 'TOURNAMENT_VOTE' ? (
+              <motion.div 
+                key="tournament-vote"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-white border border-black/5 rounded-3xl p-12 shadow-2xl max-w-2xl mx-auto w-full text-center"
+              >
+                <div className="w-20 h-20 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Trophy size={40} />
+                </div>
+                <h2 className="text-4xl font-black uppercase italic tracking-tight mb-2">Tournament Stage {tournamentStage} Complete!</h2>
+                <p className="text-sm font-mono opacity-50 uppercase tracking-widest mb-8">You and {opponentName} must decide the next step</p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                  <button 
+                    disabled={hasVoted}
+                    onClick={() => socket?.send(JSON.stringify({ type: "TOURNAMENT_VOTE", vote: "STRENGTHEN" }))}
+                    className={`p-8 rounded-2xl border-2 transition-all flex flex-col items-center gap-4 ${hasVoted ? 'opacity-50 grayscale' : 'border-black/5 hover:border-black hover:bg-black/5'}`}
+                  >
+                    <Dumbbell size={32} className="text-blue-500" />
+                    <div className="text-center">
+                      <span className="block font-black uppercase italic text-xl">Get Stronger</span>
+                      <span className="text-[10px] font-mono opacity-50 uppercase">Fight another NPC to level up</span>
+                    </div>
+                  </button>
+
+                  <button 
+                    disabled={hasVoted}
+                    onClick={() => socket?.send(JSON.stringify({ type: "TOURNAMENT_VOTE", vote: "BATTLE" }))}
+                    className={`p-8 rounded-2xl border-2 transition-all flex flex-col items-center gap-4 ${hasVoted ? 'opacity-50 grayscale' : 'border-black/5 hover:border-black hover:bg-black/5'}`}
+                  >
+                    <Sword size={32} className="text-rose-500" />
+                    <div className="text-center">
+                      <span className="block font-black uppercase italic text-xl">Battle Now</span>
+                      <span className="text-[10px] font-mono opacity-50 uppercase">Face {opponentName} in PvP</span>
+                    </div>
+                  </button>
+                </div>
+
+                <div className="flex flex-col items-center gap-4">
+                  <div className="flex gap-8">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-3 h-3 rounded-full ${hasVoted ? 'bg-emerald-500 animate-pulse' : 'bg-black/10'}`} />
+                      <span className="text-[10px] font-mono uppercase tracking-widest">Your Vote</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-3 h-3 rounded-full ${opponentVoted ? 'bg-emerald-500 animate-pulse' : 'bg-black/10'}`} />
+                      <span className="text-[10px] font-mono uppercase tracking-widest">{opponentName}'s Vote</span>
+                    </div>
+                  </div>
+                  <p className="text-[10px] font-mono opacity-30 uppercase tracking-widest">
+                    Both must choose "Battle Now" to fight each other. Otherwise, the tournament continues.
+                  </p>
+                </div>
+              </motion.div>
+            ) : phase === 'BATTLE' || phase === 'ONLINE_BATTLE' || phase === 'TOURNAMENT' ? (
               <motion.div 
                 key="battle"
                 initial={{ opacity: 0, scale: 0.95 }}

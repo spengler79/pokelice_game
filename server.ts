@@ -17,6 +17,8 @@ async function startServer() {
     pokemon?: any;
     searching: boolean;
     opponentId?: string;
+    vote?: "BATTLE" | "STRENGTHEN";
+    tournamentStage: number;
   }
 
   const players = new Map<string, Player>();
@@ -24,7 +26,7 @@ async function startServer() {
 
   wss.on("connection", (ws) => {
     const playerId = Math.random().toString(36).substring(7);
-    players.set(playerId, { ws, id: playerId, searching: false });
+    players.set(playerId, { ws, id: playerId, searching: false, tournamentStage: 0 });
 
     ws.send(JSON.stringify({ type: "INIT", playerId }));
 
@@ -37,6 +39,8 @@ async function startServer() {
           if (player) {
             player.searching = true;
             player.pokemon = message.pokemon;
+            player.tournamentStage = 1;
+            player.vote = undefined;
             
             // Matchmaking
             const opponent = Array.from(players.values()).find(
@@ -49,26 +53,65 @@ async function startServer() {
               player.opponentId = opponent.id;
               opponent.opponentId = player.id;
 
-              const battleId = `${player.id}-${opponent.id}`;
-              battles.set(battleId, { p1: player.id, p2: opponent.id, turn: player.id });
-
               player.ws.send(JSON.stringify({ 
-                type: "MATCH_FOUND", 
-                opponent: opponent.pokemon, 
-                battleId,
-                isFirst: true 
+                type: "TOURNAMENT_START", 
+                opponentName: opponent.pokemon.trainer.name,
+                stage: 1
               }));
               opponent.ws.send(JSON.stringify({ 
-                type: "MATCH_FOUND", 
-                opponent: player.pokemon, 
-                battleId,
-                isFirst: false 
+                type: "TOURNAMENT_START", 
+                opponentName: player.pokemon.trainer.name,
+                stage: 1
               }));
             }
           }
           break;
 
-        case "BATTLE_ACTION":
+        case "TOURNAMENT_VOTE": {
+          const pVote = players.get(playerId);
+          if (pVote && pVote.opponentId) {
+            pVote.vote = message.vote;
+            const opp = players.get(pVote.opponentId);
+            
+            if (opp && opp.vote) {
+              // Both voted
+              if (pVote.vote === "BATTLE" && opp.vote === "BATTLE") {
+                // PvP Battle
+                const battleId = `${pVote.id}-${opp.id}`;
+                battles.set(battleId, { p1: pVote.id, p2: opp.id, turn: pVote.id });
+                
+                pVote.ws.send(JSON.stringify({ 
+                  type: "MATCH_FOUND", 
+                  opponent: opp.pokemon, 
+                  battleId,
+                  isFirst: true 
+                }));
+                opp.ws.send(JSON.stringify({ 
+                  type: "MATCH_FOUND", 
+                  opponent: pVote.pokemon, 
+                  battleId,
+                  isFirst: false 
+                }));
+              } else {
+                // Continue Tournament (NPC Battle)
+                pVote.tournamentStage++;
+                opp.tournamentStage++;
+                pVote.vote = undefined;
+                opp.vote = undefined;
+                
+                pVote.ws.send(JSON.stringify({ type: "NEXT_STAGE", stage: pVote.tournamentStage }));
+                opp.ws.send(JSON.stringify({ type: "NEXT_STAGE", stage: opp.tournamentStage }));
+              }
+            } else {
+              // Wait for opponent
+              pVote.ws.send(JSON.stringify({ type: "VOTE_RECEIVED" }));
+              opp?.ws.send(JSON.stringify({ type: "OPPONENT_VOTED" }));
+            }
+          }
+          break;
+        }
+
+        case "BATTLE_ACTION": {
           const b = battles.get(message.battleId);
           if (b) {
             const opponentId = playerId === b.p1 ? b.p2 : b.p1;
@@ -82,12 +125,14 @@ async function startServer() {
             }
           }
           break;
+        }
 
-        case "BATTLE_END":
+        case "BATTLE_END": {
           battles.delete(message.battleId);
-          const p = players.get(playerId);
-          if (p) p.opponentId = undefined;
+          const pEnd = players.get(playerId);
+          if (pEnd) pEnd.opponentId = undefined;
           break;
+        }
       }
     });
 

@@ -48,4 +48,4 @@ export interface UserProfile {
   avatar: string;
 }
 
-export type GamePhase = 'START' | 'HUB' | 'BATTLE' | 'TRAINING' | 'EVOLUTION' | 'POKEMON_CENTER' | 'ONLINE_BATTLE' | 'PROFILE_SETUP';
+export type GamePhase = 'START' | 'HUB' | 'BATTLE' | 'TRAINING' | 'EVOLUTION' | 'POKEMON_CENTER' | 'ONLINE_BATTLE' | 'PROFILE_SETUP' | 'TOURNAMENT' | 'TOURNAMENT_VOTE';
