@@ -1,0 +1,121 @@
+import { PokemonBase, PokemonType, Move } from './types';
+
+export const MOVES: Record<string, Move> = {
+  TACKLE: { name: 'Tackle', power: 40, type: PokemonType.NORMAL, accuracy: 100 },
+  SCRATCH: { name: 'Scratch', power: 40, type: PokemonType.NORMAL, accuracy: 100 },
+  EMBER: { name: 'Ember', power: 40, type: PokemonType.FIRE, accuracy: 100 },
+  WATER_GUN: { name: 'Water Gun', power: 40, type: PokemonType.WATER, accuracy: 100 },
+  VINE_WHIP: { name: 'Vine Whip', power: 45, type: PokemonType.GRASS, accuracy: 100 },
+  THUNDER_SHOCK: { name: 'Thunder Shock', power: 40, type: PokemonType.ELECTRIC, accuracy: 100 },
+  PECK: { name: 'Peck', power: 35, type: PokemonType.NORMAL, accuracy: 100 },
+  BITE: { name: 'Bite', power: 60, type: PokemonType.NORMAL, accuracy: 100 },
+  FLAMETHROWER: { name: 'Flamethrower', power: 90, type: PokemonType.FIRE, accuracy: 100 },
+  HYDRO_PUMP: { name: 'Hydro Pump', power: 110, type: PokemonType.WATER, accuracy: 80 },
+  SOLAR_BEAM: { name: 'Solar Beam', power: 120, type: PokemonType.GRASS, accuracy: 100 },
+};
+
+export const POKEMON_DATA: Record<number, PokemonBase> = {
+  1: {
+    id: 1,
+    name: 'Bulbasaur',
+    types: [PokemonType.GRASS],
+    baseStats: { hp: 45, maxHp: 45, attack: 49, defense: 49, speed: 45 },
+    sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png',
+    moves: [MOVES.TACKLE, MOVES.VINE_WHIP],
+    evolutionLevel: 16,
+    evolvesTo: 2,
+  },
+  2: {
+    id: 2,
+    name: 'Ivysaur',
+    types: [PokemonType.GRASS],
+    baseStats: { hp: 60, maxHp: 60, attack: 62, defense: 63, speed: 60 },
+    sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/2.png',
+    moves: [MOVES.TACKLE, MOVES.VINE_WHIP, MOVES.BITE],
+    evolutionLevel: 32,
+    evolvesTo: 3,
+  },
+  3: {
+    id: 3,
+    name: 'Venusaur',
+    types: [PokemonType.GRASS],
+    baseStats: { hp: 80, maxHp: 80, attack: 82, defense: 83, speed: 80 },
+    sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/3.png',
+    moves: [MOVES.TACKLE, MOVES.VINE_WHIP, MOVES.BITE, MOVES.SOLAR_BEAM],
+  },
+  4: {
+    id: 4,
+    name: 'Charmander',
+    types: [PokemonType.FIRE],
+    baseStats: { hp: 39, maxHp: 39, attack: 52, defense: 43, speed: 65 },
+    sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/4.png',
+    moves: [MOVES.SCRATCH, MOVES.EMBER],
+    evolutionLevel: 16,
+    evolvesTo: 5,
+  },
+  5: {
+    id: 5,
+    name: 'Charmeleon',
+    types: [PokemonType.FIRE],
+    baseStats: { hp: 58, maxHp: 58, attack: 64, defense: 58, speed: 80 },
+    sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/5.png',
+    moves: [MOVES.SCRATCH, MOVES.EMBER, MOVES.BITE],
+    evolutionLevel: 36,
+    evolvesTo: 6,
+  },
+  6: {
+    id: 6,
+    name: 'Charizard',
+    types: [PokemonType.FIRE],
+    baseStats: { hp: 78, maxHp: 78, attack: 84, defense: 78, speed: 100 },
+    sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/6.png',
+    moves: [MOVES.SCRATCH, MOVES.EMBER, MOVES.BITE, MOVES.FLAMETHROWER],
+  },
+  7: {
+    id: 7,
+    name: 'Squirtle',
+    types: [PokemonType.WATER],
+    baseStats: { hp: 44, maxHp: 44, attack: 48, defense: 65, speed: 43 },
+    sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/7.png',
+    moves: [MOVES.TACKLE, MOVES.WATER_GUN],
+    evolutionLevel: 16,
+    evolvesTo: 8,
+  },
+  8: {
+    id: 8,
+    name: 'Wartortle',
+    types: [PokemonType.WATER],
+    baseStats: { hp: 59, maxHp: 59, attack: 63, defense: 80, speed: 58 },
+    sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/8.png',
+    moves: [MOVES.TACKLE, MOVES.WATER_GUN, MOVES.BITE],
+    evolutionLevel: 36,
+    evolvesTo: 9,
+  },
+  9: {
+    id: 9,
+    name: 'Blastoise',
+    types: [PokemonType.WATER],
+    baseStats: { hp: 79, maxHp: 79, attack: 83, defense: 100, speed: 78 },
+    sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/9.png',
+    moves: [MOVES.TACKLE, MOVES.WATER_GUN, MOVES.BITE, MOVES.HYDRO_PUMP],
+  },
+};
+
+export const WILD_POKEMON = [
+  { id: 10, name: 'Caterpie', hp: 45, attack: 30, defense: 35, speed: 45, sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/10.png', moves: [MOVES.TACKLE] },
+  { id: 13, name: 'Weedle', hp: 40, attack: 35, defense: 30, speed: 50, sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/13.png', moves: [MOVES.TACKLE] },
+  { id: 16, name: 'Pidgey', hp: 40, attack: 45, defense: 40, speed: 56, sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/16.png', moves: [MOVES.TACKLE, MOVES.PECK] },
+  { id: 19, name: 'Rattata', hp: 30, attack: 56, defense: 35, speed: 72, sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/19.png', moves: [MOVES.TACKLE, MOVES.BITE] },
+  { id: 25, name: 'Pikachu', hp: 35, attack: 55, defense: 40, speed: 90, sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png', moves: [MOVES.TACKLE, MOVES.THUNDER_SHOCK] },
+];
+
+export const FINAL_BOSS = {
+  id: 150,
+  name: 'Mewtwo',
+  hp: 600,
+  attack: 180,
+  defense: 140,
+  speed: 150,
+  sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/150.png',
+  moves: [MOVES.SOLAR_BEAM, MOVES.HYDRO_PUMP, MOVES.FLAMETHROWER, MOVES.SOLAR_BEAM]
+};
