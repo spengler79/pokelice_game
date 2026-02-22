@@ -18,9 +18,12 @@ import {
   Gamepad2,
   Circle,
   Users,
-  Globe
+  Globe,
+  User,
+  Camera,
+  Check
 } from 'lucide-react';
-import { PokemonType, UserPokemon, Stats, GamePhase, Move } from './types';
+import { PokemonType, UserPokemon, Stats, GamePhase, Move, UserProfile } from './types';
 import { POKEMON_DATA, WILD_POKEMON, FINAL_BOSS } from './constants';
 
 const XP_PER_LEVEL = 100;
@@ -40,6 +43,8 @@ export default function App() {
   const [playerAnim, setPlayerAnim] = useState<'idle' | 'attack' | 'hit'>('idle');
   const [enemyAnim, setEnemyAnim] = useState<'idle' | 'attack' | 'hit'>('idle');
   const [battleFlash, setBattleFlash] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [profileDraft, setProfileDraft] = useState<UserProfile>({ name: '', avatar: 'https://picsum.photos/seed/trainer1/200/200' });
 
   useEffect(() => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -110,6 +115,12 @@ export default function App() {
 
   const startOnlineSearch = () => {
     if (!pokemon || pokemon.currentStats.hp <= 0 || isRecovering) return;
+    
+    if (!userProfile) {
+      setPhase('PROFILE_SETUP');
+      return;
+    }
+
     setIsSearching(true);
     socket?.send(JSON.stringify({ 
       type: "SEARCH_MATCH", 
@@ -121,7 +132,8 @@ export default function App() {
         maxHp: pokemon.currentStats.maxHp,
         hp: pokemon.currentStats.hp,
         moves: pokemon.moves,
-        level: pokemon.level
+        level: pokemon.level,
+        trainer: userProfile
       } 
     }));
   };
@@ -880,6 +892,71 @@ export default function App() {
                       </div>
                     );
                   })}
+                </div>
+              </motion.div>
+            ) : phase === 'PROFILE_SETUP' ? (
+              <motion.div 
+                key="profile-setup"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-white border border-black/5 rounded-3xl p-12 shadow-2xl max-w-md mx-auto w-full"
+              >
+                <div className="text-center mb-8">
+                  <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <User size={40} />
+                  </div>
+                  <h2 className="text-3xl font-black uppercase italic tracking-tight">Trainer Profile</h2>
+                  <p className="text-xs font-mono opacity-40 uppercase tracking-widest">Set your identity for online battles</p>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="relative group">
+                      <img 
+                        src={profileDraft.avatar} 
+                        className="w-32 h-32 rounded-full object-cover border-4 border-black/5 group-hover:border-blue-500 transition-colors"
+                        referrerPolicy="no-referrer"
+                      />
+                      <button 
+                        onClick={() => setProfileDraft(prev => ({ ...prev, avatar: `https://picsum.photos/seed/${Math.random()}/200/200` }))}
+                        className="absolute bottom-0 right-0 bg-black text-white p-2 rounded-full hover:bg-blue-600 transition-colors shadow-lg"
+                      >
+                        <Camera size={16} />
+                      </button>
+                    </div>
+                    <span className="text-[10px] font-mono opacity-30 uppercase tracking-widest">Click camera to change photo</span>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-mono opacity-40 uppercase tracking-widest ml-1">Trainer Name</label>
+                    <input 
+                      type="text"
+                      value={profileDraft.name}
+                      onChange={(e) => setProfileDraft(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Enter your name..."
+                      className="w-full bg-black/5 border-none rounded-xl px-4 py-3 font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                    />
+                  </div>
+
+                  <div className="pt-4 flex gap-3">
+                    <button 
+                      onClick={() => setPhase('HUB')}
+                      className="flex-1 py-4 border border-black/10 rounded-xl font-bold uppercase tracking-widest hover:bg-black/5 transition-colors text-xs"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      disabled={!profileDraft.name.trim()}
+                      onClick={() => {
+                        setUserProfile(profileDraft);
+                        setPhase('HUB');
+                      }}
+                      className="flex-[2] py-4 bg-blue-600 text-white rounded-xl font-black uppercase italic tracking-widest hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2 text-xs"
+                    >
+                      <Check size={18} />
+                      Save Profile
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             ) : phase === 'BATTLE' || phase === 'ONLINE_BATTLE' ? (

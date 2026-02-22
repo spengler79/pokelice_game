@@ -43,4 +43,9 @@ export interface UserPokemon extends PokemonBase {
   recoveryEndTime?: number;
 }
 
-export type GamePhase = 'START' | 'HUB' | 'BATTLE' | 'TRAINING' | 'EVOLUTION' | 'POKEMON_CENTER' | 'ONLINE_BATTLE';
+export interface UserProfile {
+  name: string;
+  avatar: string;
+}
+
+export type GamePhase = 'START' | 'HUB' | 'BATTLE' | 'TRAINING' | 'EVOLUTION' | 'POKEMON_CENTER' | 'ONLINE_BATTLE' | 'PROFILE_SETUP';
