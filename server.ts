@@ -2,6 +2,7 @@ import express from "express";
 import { createServer as createViteServer } from "vite";
 import { WebSocketServer, WebSocket } from "ws";
 import { createServer } from "http";
+import path from "path";
 
 async function startServer() {
   const app = express();
@@ -155,6 +156,9 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     app.use(express.static("dist"));
+    app.get("*", (req, res) => {
+      res.sendFile(path.resolve("dist", "index.html"));
+    });
   }
 
   server.listen(PORT, "0.0.0.0", () => {
